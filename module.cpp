@@ -136,6 +136,48 @@ torch::Tensor myNaiveAttention(torch::Tensor QTensor, torch::Tensor KTensor, tor
     */
     
     // -------- YOUR CODE HERE  -------- //
+    for(int b = 0; b < B ; b++){
+        for(int h = 0; h < H; h++){
+            for(int n1 = 0; n1 < N; n1++){
+                for(int n2 = 0; n2 < N; n2++){
+                    float total = 0.0;
+                    for(int feature = 0; feature < d; feature++){
+                        float qval = fourDimRead(Q, b, h, n1, feature, H, N, d);
+                        float kval = fourDimRead(K, b, h, n2, feature, H, N, d);
+                        total += (qval * kval);
+                    }
+                    twoDimWrite(QK_t, n1, n2, N, total);
+                }
+            }
+
+            for(int n1 = 0; n1 <N; n1++){
+                float exp_total = 0.0;
+                for(int n2 = 0; n2 < N; n2++){
+                    float val = twoDimRead(QK_t, n1, n2, N);
+                    float exp_val = exp(val);
+                    exp_total += exp_val;
+                    twoDimWrite(QK_t, n1, n2, N, exp_val);
+                }
+                for(int n2 = 0; n2 < N; n2++){
+                    float val = twoDimRead(QK_t, n1, n2, N) / exp_total;
+                    twoDimWrite(QK_t, n1, n2, N, val);
+                }
+            }
+
+            for(int n1 = 0; n1 < N; n1++){
+                for(int feature = 0; feature < d; feature++){
+                    float total =0.0;
+                    for(int n2 = 0; n2 < N; n2++){
+                        float qktval = twoDimRead(QK_t, n1, n2, N);
+                        float vval = fourDimRead(V, b, h, n2, feature, H, N, d);
+                        total += (qktval * vval);
+                    }
+                    fourDimWrite(O, b, h, n1, feature, H, N, d, total);
+                }
+            }
+        }
+    }
+
     
     // DO NOT EDIT THIS RETURN STATEMENT //
     // It formats your C++ Vector O back into a Tensor of Shape (B, H, N, d) and returns it //
