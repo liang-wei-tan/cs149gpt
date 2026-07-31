@@ -447,3 +447,25 @@ Please submit your writeup questions in a file `writeup.pdf`. REMEMBER to map th
   * module.ispc (if you attempted the extra credit)
     
 * Please submit your writeup in a file called `writeup.pdf` to Assignment 4 (Write-Up).
+
+## Useful commands
+```
+# 1. Ensure Python 3.10 and venv utilities are installed on the new system
+sudo apt-get update
+sudo apt-get install -y python3.10 python3.10-venv python3.10-dev
+
+# 2. Create the virtual environment in your project directory
+python3.10 -m venv cs149_env
+
+# 3. Activate the environment
+source cs149_env/bin/activate
+
+# 4. Upgrade pip to avoid installation warnings
+pip install --upgrade pip
+
+# 5. Install the required PyTorch version with CUDA 12.1 support
+pip install torch==2.1.2 torchvision==0.16.2 torchaudio==2.1.2 --index-url https://download.pytorch.org/whl/cu121
+
+# 6. Install the specific compatible versions of NumPy and Ninja
+pip install "numpy<2" ninja
+```
