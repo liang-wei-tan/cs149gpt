@@ -468,4 +468,7 @@ pip install torch==2.1.2 torchvision==0.16.2 torchaudio==2.1.2 --index-url https
 
 # 6. Install the specific compatible versions of NumPy and Ninja
 pip install "numpy<2" ninja
+
+# instsall vim/nano
+apt-get install -y nano vim
 ```
