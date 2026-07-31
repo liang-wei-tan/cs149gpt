@@ -24,14 +24,27 @@ inline void twoDimWrite(std::vector<float> &tensor, int &x, int &y, const int &s
     tensor[x * (sizeX) + y] = val;
 }
 
+// 10 by 5 by 3 = 10 by 15 => x * 15 + y *5 + z
+
 // Step #2: Implement Read/Write Accessors for a 4D Tensor
 inline float fourDimRead(std::vector<float> &tensor, int &x, int &y, int &z, int &b, 
         const int &sizeX, const int &sizeY, const int &sizeZ) {
-    return 0.0;
+    auto temp = tensor.begin();
+    temp += (x * sizeX * sizeY * sizeZ);
+    temp += (y * sizeY * sizeZ);
+    temp += (z * sizeZ);
+    temp += b;
+    return *temp;
 }
 
 inline void fourDimWrite(std::vector<float> &tensor, int &x, int &y, int &z, int &b, 
         const int &sizeX, const int &sizeY, const int &sizeZ, float &val) {
+    auto temp = tensor.begin();
+    temp += (x * sizeX * sizeY * sizeZ);
+    temp += (y * sizeY * sizeZ);
+    temp += (z * sizeZ);
+    temp += b;
+    *temp = val;
     return; 
 }
 
