@@ -6,6 +6,8 @@
 #include <vector>
 #include <immintrin.h>
 
+ #define BLOCK_SIZE 64
+
 // Uncomment for ISPC
 //#include "module_ispc.h"
 //using namespace ispc;
@@ -208,6 +210,64 @@ torch::Tensor myUnfusedAttentionBlocked(torch::Tensor QTensor, torch::Tensor KTe
     std::vector<float> QK_t = formatTensor(QK_tTensor);
 
     // -------- YOUR CODE HERE  -------- //
+    int numBlocks = (N + BLOCK_SIZE - 1) / BLOCK_SIZE; 
+    for(int b = 0; b < B ; b++){
+        for(int h = 0; h < H; h++){
+            for(int b1 = 0; b1 < numBlocks; b1++){
+                int n1_start = b1 * BLOCK_SIZE;
+                int n1_end = std::min(n1_start + BLOCK_SIZE, N);
+                for(int b2 = 0; b2 < numBlocks; b2++){
+                    int n2_start = b2 * BLOCK_SIZE;
+                    int n2_end = std::min(n2_start + BLOCK_SIZE, N);
+                    for(int n1 = n1_start; n1 < n1_end; n1++){
+                        for(int n2 = n2_start; n2 < n2_end; n2++){
+                            float total = 0.0;
+                            for(int feature = 0; feature < d; feature++){
+                                float qval = fourDimRead(Q, b, h, n1, feature, H, N, d);
+                                float kval = fourDimRead(K, b, h, n2, feature, H, N, d);
+                                total += (qval * kval);
+                            }
+                            twoDimWrite(QK_t, n1, n2, N, total);
+                        }
+                    }
+                }
+            }
+
+            for(int n1 = 0; n1 <N; n1++){
+                float exp_total = 0.0;
+                for(int n2 = 0; n2 < N; n2++){
+                    float val = twoDimRead(QK_t, n1, n2, N);
+                    float exp_val = exp(val);
+                    exp_total += exp_val;
+                    twoDimWrite(QK_t, n1, n2, N, exp_val);
+                }
+                for(int n2 = 0; n2 < N; n2++){
+                    float val = twoDimRead(QK_t, n1, n2, N) / exp_total;
+                    twoDimWrite(QK_t, n1, n2, N, val);
+                }
+            }
+
+            for(int b1 = 0; b1 < numBlocks; b1++){
+                int n1_start = b1 * BLOCK_SIZE;
+                int n1_end = std::min(n1_start + BLOCK_SIZE, N);
+                for(int b2 = 0; b2 < numBlocks; b2++){
+                    int n2_start = b2 * BLOCK_SIZE;
+                    int n2_end = std::min(n2_start + BLOCK_SIZE, N);
+                    for(int n1 = n1_start; n1 < n1_end; n1++){
+                        for(int feature = 0; feature < d; feature++){
+                            float total =fourDimRead(O, b, h, n1, feature, H, N, d);
+                            for(int n2 = n2_start; n2 < n2_end; n2++){
+                                float qktval = twoDimRead(QK_t, n1, n2, N);
+                                float vval = fourDimRead(V, b, h, n2, feature, H, N, d);
+                                total += (qktval * vval);
+                            }
+                            fourDimWrite(O, b, h, n1, feature, H, N, d, total);
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     // DO NOT EDIT THIS RETURN STATEMENT //
     // It formats your C++ Vector O back into a Tensor of Shape (B, H, N, d) and returns it //

@@ -28,7 +28,7 @@ python3 gpt149.py part1
 Compiling code into a PyTorch module...
 
 
-Running Part 1 Test: Naive Unfused Attention
+# Running Part 1 Test: Naive Unfused Attention
 
 -----RUNNING REFERENCE IMPLEMENTATION-----
 
@@ -87,3 +87,67 @@ Self CPU time total: 192.605ms
 STUDENT - NAIVE ATTENTION statistics
 cpu time:  192.563ms
 mem usage:  4718592 bytes
+
+# Running Part 2: Blocked Matrix Multiply and Unfused Softmax (20 Points)
+
+## Reference
+REFERENCE - BLOCKED MATMUL + UNFUSED SOFTMAX statistics
+cpu time:  179.29ms
+mem usage:  4718592 bytes
+
+## Naive version 
+Just to benchmark since i'm using a different machine from Part 1
+STUDENT - BLOCKED MATMUL + UNFUSED SOFTMAX statistics
+cpu time:  194.881ms
+mem usage:  4718592 bytes
+
+## Tiling of QK_t computation
+### BLOCKSIZE = 16
+
+Q = 16 * d = 16 * 64 = 1KB, K =  16 * d = 16 * 64 = 1KB
+= 2-3KB used 
+
+STUDENT - BLOCKED MATMUL + UNFUSED SOFTMAX statistics
+cpu time:  193.046ms
+mem usage:  4718592 bytes
+
+### BLOCKSIZE = 32
+
+ Q = 32 * d = 32 * 64 = 2KB, K =  16 * d = 16 * 64 = 2KB
+
+STUDENT - BLOCKED MATMUL + UNFUSED SOFTMAX statistics
+cpu time:  193.488ms
+mem usage:  4718592 bytes
+
+### BLOCKSIZE = 64
+
+Q = 64 * d = 64 * 64 = 4KB, K =  64 * d = 64 * 64 = 4KB
+
+STUDENT - BLOCKED MATMUL + UNFUSED SOFTMAX statistics
+cpu time:  192.459ms
+mem usage:  4718592 bytes
+
+
+
+### BLOCKSIZE = 128
+
+Q = 128 * d = 128 * 64 = 8KB, K =  128 * d = 128 * 64 = 8KB
+
+STUDENT - BLOCKED MATMUL + UNFUSED SOFTMAX statistics
+cpu time:  192.254ms
+mem usage:  4718592 bytes
+
+
+## Tiling to both computation of QK transpose and O 
+
+REFERENCE - BLOCKED MATMUL + UNFUSED SOFTMAX statistics
+cpu time:  179.204ms
+mem usage:  4718592 bytes
+-----RUNNING STUDENT IMPLEMENTATION-------
+
+Beats reference by quite a bit.
+
+STUDENT - BLOCKED MATMUL + UNFUSED SOFTMAX statistics
+cpu time:  159.692ms
+mem usage:  4718592 bytes
+root@5d3760b17c3b:~/cs149gpt# 
