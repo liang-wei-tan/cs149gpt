@@ -139,15 +139,58 @@ mem usage:  4718592 bytes
 
 
 ## Tiling to both computation of QK transpose and O 
-
 REFERENCE - BLOCKED MATMUL + UNFUSED SOFTMAX statistics
 cpu time:  179.204ms
 mem usage:  4718592 bytes
 -----RUNNING STUDENT IMPLEMENTATION-------
 
+### N = 8
+same as reference pretty much
+
+STUDENT - BLOCKED MATMUL + UNFUSED SOFTMAX statistics
+cpu time:  175.535ms
+mem usage:  4718592 bytes
+
+
+### N = 16
 Beats reference by quite a bit.
 
 STUDENT - BLOCKED MATMUL + UNFUSED SOFTMAX statistics
-cpu time:  159.692ms
+cpu time:  137.249ms
 mem usage:  4718592 bytes
-root@5d3760b17c3b:~/cs149gpt# 
+
+### N = 32
+
+STUDENT - BLOCKED MATMUL + UNFUSED SOFTMAX statistics
+cpu time:  154.235ms
+mem usage:  4718592 bytes
+
+### N = 64
+
+STUDENT - BLOCKED MATMUL + UNFUSED SOFTMAX statistics
+cpu time:  159.746ms
+mem usage:  4718592 bytes
+
+### N = 128
+STUDENT - BLOCKED MATMUL + UNFUSED SOFTMAX statistics
+cpu time:  176.119ms
+mem usage:  4718592 bytes
+
+### N = 256
+STUDENT - BLOCKED MATMUL + UNFUSED SOFTMAX statistics
+cpu time:  194.285ms
+mem usage:  4718592 bytes
+
+## Questions
+1. Share us some data about what tile sizes you tried when N=1024, and what the performance times were for each. What was the optimal tile size for your matrix multiplications? Explain why you think this tile size worked best for your implementation. There really isn't a wrong answer here, we just want to see that you experimented and tried to form conclusions.
+
+> Optimal tile size is 16. there are 2 cases where tiling are used. Probably, 16 is the amount where both fit completely into memory for both. Increasing to 32 made one of the tiling loops experience cache trashing etc and hence, reducing the speedup. Increasing to256 on the other hand cause trashing in both cases and hence, becomes just like the naive case. Reducing to 8 on the other hand made the factor of reduction in memory read 8 and did not help much. Hence 16 is ideal. 
+
+2. For a matrix multiply of Q(Nxd) and Ktranspose (dxN), what is the ratio of DRAM accesses in Part 2 versus DRAM acceses in Part 1? (assume 4 byte float primitives, 64 byte cache lines, as well as N and d are very large).
+Ratio of DRAM for part 1. For first iteration in Loop for Q, we have to do a DRAM access for every row. And because cache isn't big enough to hold dXN, cache lines get evicted when iterating to higher N rows for K transpose. Hence, for every row, DRAM access is needed for all elements of K. 
+
+Hence. N x d/cacheline for Q, and for N times, dxN is laoded fully, hence N x (Nxd/cacheline). Total = Nxd/cacheline + d x N x N / cacheline.
+
+For part 2. we process in batch of 16 where all 16 lines of Q and K transpose fit in cache. For each batch of 16 rows of Q, all dxN of K has to be loaded too. Hence, the number of dram access is = loading of entire Q + N/16 batches x loading of entire K transpose. hence total = Nxd/cacheline + N / 32 * d x N / cacheline.
+
+Hence ratio is ((1/cacheline)  x ( Nxd + NxNxd)) / ((1/cacheline) * (Nxd + NxNxd/16) ) = (Nxd + NxNxd) / (Nxd + NxNxd/16) ~~ 1/16x lesser DRAM access. 

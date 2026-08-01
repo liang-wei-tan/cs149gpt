@@ -6,7 +6,7 @@
 #include <vector>
 #include <immintrin.h>
 
- #define BLOCK_SIZE 64
+ #define BLOCK_SIZE 256
 
 // Uncomment for ISPC
 //#include "module_ispc.h"
