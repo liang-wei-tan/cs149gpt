@@ -253,3 +253,10 @@ mem usage:  557056 bytes
 
 > With fused attention, computation for each row is consolidated into a nice independent block making it easier to parallelize. On the other hand, when it is not fused, we have several blocks within the b and h loop iterating though different dimension which makes it harder to parallelize. To parallelize the innermost loop which has different dimension, we would require locks to coordinate and generate correct output which leads to contention and other problems which slows thing down. Without locks, We would only be able to parallize across the b and h loops instead of 3 loops. This leads to lower CPU utilization and slower completion. 
 
+# Part 4 : Putting it all Together - Flash Attention (35 Points)
+Self CPU time total: 185.116ms
+
+STUDENT - FLASH ATTENTION statistics
+cpu time:  184.912ms
+mem usage:  524288 bytes
+
