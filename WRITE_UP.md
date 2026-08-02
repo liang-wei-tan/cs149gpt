@@ -214,3 +214,32 @@ mem usage:  557056 bytes
 For N=3000, Naive does 1703.56ms while naive fusing does 1893.063ms;
 
 Based on research the reason is that while cache performance improve when fusing, it sacrificed parallel execution performance due to compiler not parallelizing it well. It is much easier in the naive example for compiler to identify parallelizable loops for SIMD execution.
+
+## Fused implementation with openMP multi core procesisng on outermost loop 
+STUDENT - FUSED ATTENTION statistics
+cpu time:  239.625ms
+mem usage:  557056 bytes
+
+## Fused implementation with openMP multi core procesisng on 2 outermost loop 
+Parallelizing on b and h
+Self CPU time total: 87.780ms
+
+STUDENT - FUSED ATTENTION statistics
+cpu time:  87.743ms
+mem usage:  557056 bytes
+
+## Fused implementation with openMP multi core procesisng on 3 outermost loop 
+Parallelizing on b and h, and row level
+Self CPU time total: 58.832ms
+
+STUDENT - FUSED ATTENTION statistics
+cpu time:  58.791ms
+mem usage:  557056 bytes
+
+## FUsed implementation with multi core procesisng on 3 outermost loop , restructure loop such that innermost loop iterates on d which is contiguous
+Significantly beats reference of 55ms
+Self CPU time total: 34.331ms
+
+STUDENT - FUSED ATTENTION statistics
+cpu time:  34.291ms
+mem usage:  557056 bytes
