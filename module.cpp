@@ -385,6 +385,48 @@ torch::Tensor myFlashAttention(torch::Tensor QTensor, torch::Tensor KTensor, tor
     std::vector<float> lnew = formatTensor(LnewTensor);
 
     // -------- YOUR CODE HERE  -------- //
+    int trBlocks = (N + Br - 1) / Br;
+    int tcBlocks = (N + Bc - 1) / Bc;
+
+    for (int b = 0; b < B; b++){
+        //loop over heads
+        for (int h = 0; h < H; h++){
+
+            for(int tc = 0; tc < tcBlocks; tc++){
+                int tcStart = tc * Bc;
+                int tcEnd = std::min(tcStart + Bc, N);
+                
+                // load Vj and Kj
+                for(int c = 0; c < Bc; c++){
+                    for(int feature = 0; feature < d; feature ++){
+                        float kj = fourDimRead(K, b, h, tcStart + c, feature, H, N, d);
+                        float vj = fourDimRead(V, b, h, tcStart + c, feature, H, N, d);
+                        twoDimWrite(Kj, c, feature, d, kj);
+                        twoDimWrite(Vj, c, feature, d, vj);
+                    }
+                }
+
+                for(int tr = 0; tr < trBlocks; tr++){
+                    int trStart = tr * Br;
+                    int trEnd = std::min(trStart + Br, N);
+                    
+                    // Load Qi, Oi, and Li
+                    for(int r = 0; r < Br; r++){
+                        li[r] = l[trStart + r];
+                        for(int feature = 0; feature < d; feature++){
+                            float qi = fourDimRead(Q, b, h, trStart + r, feature, H, N, d);
+                            twoDimWrite(Qi, r, feature, Br, qi);
+                            float oi = fourDimRead(O, b, h, trStart + r, feature, H, N, d);
+                            twoDimWrite(Oi, r, feature, Br, oi);
+                        }
+                    }
+
+                    // computation starts
+                }
+            }
+        }
+    }
+
 
     // DO NOT EDIT THIS RETURN STATEMENT //
     // It formats your C++ Vector O back into a Tensor of Shape (B, H, N, d) and returns it //
