@@ -424,7 +424,67 @@ torch::Tensor myFlashAttention(torch::Tensor QTensor, torch::Tensor KTensor, tor
                     }
 
                     // computation starts
+
+                    for(int i = 0; i < (trEnd - trStart); i++){
+                        for(int j = 0; j < (tcEnd - tcStart); j++){
+                            float total = 0.0;
+                            for(int feature = 0; feature < d; feature++){
+                                float qi = twoDimRead(Qi, i, feature, d);
+                                float kj = twoDimRead(Kj, j, feature, d);
+                                total += (qi * kj);
+                            }
+                            twoDimWrite(Sij, i, j, Bc, total);
+                        }
+                    }
+
+                    // compute Pij
+                    for(int i = 0; i < (trEnd - trStart); i++){
+                        for(int j = 0; j < (tcEnd - tcStart); j++){
+                            float val = twoDimRead(Sij, i, j, Bc);
+                            float exp_val = exp(val);
+                            twoDimWrite(Pij, i, j, Bc, exp_val);
+                        }
+                    }
+
+                    for(int i = 0; i < (trEnd - trStart); i++){
+                        float total = 0.0;
+                        for(int j = 0; j < (tcEnd - tcStart); j++){
+                            float pval = twoDimRead(Pij, i, j, Bc);
+                            total += pval;
+                        }
+                        lij[i] = total;
+                    }
+
+                    // compute lnew
+                    for(int i = 0; i < (trEnd - trStart); i++){
+                        lnew[i] = lij[i] + li[i];
+                    }
+
+                    // compute Oi
+                    for(int i = 0; i < (trEnd - trStart); i++){
+                        for(int feature = 0; feature < d; feature++){
+                           float lo = l[i] * twoDimRead(Oi, i, feature, d);
+                           for(int j = 0; j < (tcEnd - tcStart); j++){
+                                float pval = twoDimRead(Pij, i, j, Bc);
+                                float vval = twoDimRead(Vj, j, feature, d);
+                                lo += pval * vval;
+                           }
+                           lo = lo/lnew[i];
+                           twoDimWrite(Oi, i, feature, d, lo);
+                        }
+                    }
+
+                    // write back Oi and lnew
+                    for(int r = trStart; r < trEnd; r++){
+                        int temp_r = r - trStart;
+                        l[r] = li[temp_r];
+                        for(int feature = 0; feature < d; feature++){
+                            float oi = twoDimRead(Oi, temp_r, feature, d);
+                            fourDimWrite(O, b, h, r, feature, H, N, d, oi);
+                        }
+                    }
                 }
+
             }
         }
     }
