@@ -397,12 +397,13 @@ torch::Tensor myFlashAttention(torch::Tensor QTensor, torch::Tensor KTensor, tor
                 int tcEnd = std::min(tcStart + Bc, N);
                 
                 // load Vj and Kj
-                for(int c = 0; c < Bc; c++){
+                for(int c = tcStart; c < tcEnd; c++){
                     for(int feature = 0; feature < d; feature ++){
-                        float kj = fourDimRead(K, b, h, tcStart + c, feature, H, N, d);
-                        float vj = fourDimRead(V, b, h, tcStart + c, feature, H, N, d);
-                        twoDimWrite(Kj, c, feature, d, kj);
-                        twoDimWrite(Vj, c, feature, d, vj);
+                        float kj = fourDimRead(K, b, h, c, feature, H, N, d);
+                        float vj = fourDimRead(V, b, h, c, feature, H, N, d);
+                        int temp_c = c - tcStart;
+                        twoDimWrite(Kj, temp_c, feature, d, kj);
+                        twoDimWrite(Vj, temp_c, feature, d, vj);
                     }
                 }
 
@@ -411,13 +412,14 @@ torch::Tensor myFlashAttention(torch::Tensor QTensor, torch::Tensor KTensor, tor
                     int trEnd = std::min(trStart + Br, N);
                     
                     // Load Qi, Oi, and Li
-                    for(int r = 0; r < Br; r++){
-                        li[r] = l[trStart + r];
+                    for(int r = trStart; r < trEnd; r++){
+                        int temp_r = r - trStart;
+                        li[temp_r] = l[r];
                         for(int feature = 0; feature < d; feature++){
-                            float qi = fourDimRead(Q, b, h, trStart + r, feature, H, N, d);
-                            twoDimWrite(Qi, r, feature, Br, qi);
-                            float oi = fourDimRead(O, b, h, trStart + r, feature, H, N, d);
-                            twoDimWrite(Oi, r, feature, Br, oi);
+                            float qi = fourDimRead(Q, b, h, r, feature, H, N, d);
+                            twoDimWrite(Qi, temp_r, feature, feature, qi);
+                            float oi = fourDimRead(O, b, h, r, feature, H, N, d);
+                            twoDimWrite(Oi, temp_r, feature, feature, oi);
                         }
                     }
 
