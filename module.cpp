@@ -392,6 +392,10 @@ torch::Tensor myFlashAttention(torch::Tensor QTensor, torch::Tensor KTensor, tor
         //loop over heads
         for (int h = 0; h < H; h++){
 
+            for (int i = 0; i < N; i++) {
+                l[i] = 0.0f;
+            }
+
             for(int tc = 0; tc < tcBlocks; tc++){
                 int tcStart = tc * Bc;
                 int tcEnd = std::min(tcStart + Bc, N);
@@ -417,9 +421,9 @@ torch::Tensor myFlashAttention(torch::Tensor QTensor, torch::Tensor KTensor, tor
                         li[temp_r] = l[r];
                         for(int feature = 0; feature < d; feature++){
                             float qi = fourDimRead(Q, b, h, r, feature, H, N, d);
-                            twoDimWrite(Qi, temp_r, feature, feature, qi);
+                            twoDimWrite(Qi, temp_r, feature, d, qi);
                             float oi = fourDimRead(O, b, h, r, feature, H, N, d);
-                            twoDimWrite(Oi, temp_r, feature, feature, oi);
+                            twoDimWrite(Oi, temp_r, feature, d, oi);
                         }
                     }
 
@@ -463,7 +467,7 @@ torch::Tensor myFlashAttention(torch::Tensor QTensor, torch::Tensor KTensor, tor
                     // compute Oi
                     for(int i = 0; i < (trEnd - trStart); i++){
                         for(int feature = 0; feature < d; feature++){
-                           float lo = l[i] * twoDimRead(Oi, i, feature, d);
+                           float lo = li[i] * twoDimRead(Oi, i, feature, d);
                            for(int j = 0; j < (tcEnd - tcStart); j++){
                                 float pval = twoDimRead(Pij, i, j, Bc);
                                 float vval = twoDimRead(Vj, j, feature, d);
@@ -477,7 +481,7 @@ torch::Tensor myFlashAttention(torch::Tensor QTensor, torch::Tensor KTensor, tor
                     // write back Oi and lnew
                     for(int r = trStart; r < trEnd; r++){
                         int temp_r = r - trStart;
-                        l[r] = li[temp_r];
+                        l[r] = lnew[temp_r];
                         for(int feature = 0; feature < d; feature++){
                             float oi = twoDimRead(Oi, temp_r, feature, d);
                             fourDimWrite(O, b, h, r, feature, H, N, d, oi);
