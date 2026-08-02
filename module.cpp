@@ -309,10 +309,36 @@ torch::Tensor myFusedAttention(torch::Tensor QTensor, torch::Tensor KTensor, tor
         for (int h = 0; h < H; h++){
             for (int i = 0; i < N ; i++){
 
-		// YRow is moved inside so each OpenMP thread gets a local copy.
-                at::Tensor ORowTensor = temp.index({torch::indexing::Slice(omp_get_thread_num(), torch::indexing::None)});      
-                std::vector<float> ORow = formatTensor(ORowTensor);
-		//YOUR CODE HERE
+		        // YRow is moved inside so each OpenMP thread gets a local copy.
+                // at::Tensor ORowTensor = temp.index({torch::indexing::Slice(omp_get_thread_num(), torch::indexing::None)});      
+                // std::vector<float> ORow = formatTensor(ORowTensor);
+		        //YOUR CODE HERE
+                for (int j = 0; j < N; j++){
+                    float total = 0.0;
+                    for(int feature = 0; feature < d; feature++){
+                        float qval = fourDimRead(Q, b, h, i, feature, H, N, d);
+                        float kval = fourDimRead(K, b, h, j, feature, H, N, d);
+                        total += (qval * kval);
+                    }
+                    float exp_calc = exp(total);
+                    ORow[j] = exp_calc;
+                }
+                float exponentialSum = 0.0;
+                for (int j = 0; j < N; j++){
+                    exponentialSum += ORow[j];
+                }
+                for (int j = 0; j < N; j++){
+                    ORow[j] = ORow[j] / exponentialSum;
+                }
+                for(int feature=0; feature < d; feature++){
+                    float total = 0.0;
+                    for(int j = 0; j < N; j++){
+                        float qktval = ORow[j];
+                        float vval = fourDimRead(V, b, h, j, feature, H, N, d);
+                        total += (qktval * vval);
+                    }
+                    fourDimWrite(O, b, h, i, feature, H, N, d, total);
+                }
             }
 	}
     }

@@ -194,3 +194,23 @@ Hence. N x d/cacheline for Q, and for N times, dxN is laoded fully, hence N x (N
 For part 2. we process in batch of 16 where all 16 lines of Q and K transpose fit in cache. For each batch of 16 rows of Q, all dxN of K has to be loaded too. Hence, the number of dram access is = loading of entire Q + N/16 batches x loading of entire K transpose. hence total = Nxd/cacheline + N / 32 * d x N / cacheline.
 
 Hence ratio is ((1/cacheline)  x ( Nxd + NxNxd)) / ((1/cacheline) * (Nxd + NxNxd/16) ) = (Nxd + NxNxd) / (Nxd + NxNxd/16) ~~ 1/16x lesser DRAM access. 
+
+# Part 3: Fused Attention (25 Points)
+## Reference
+Self CPU time total: 55.094ms
+
+REFERENCE - FUSED ATTENTION statistics
+cpu time:  55.057ms
+mem usage:  557056 bytes
+
+## Initial implementation naive fusing. 
+It's odd that fusing does worse than fully naive. 
+Naive attention does 192ms which is better. 
+
+STUDENT - FUSED ATTENTION statistics
+cpu time:  228.728ms
+mem usage:  557056 bytes
+
+For N=3000, Naive does 1703.56ms while naive fusing does 1893.063ms;
+
+Based on research the reason is that while cache performance improve when fusing, it sacrificed parallel execution performance due to compiler not parallelizing it well. It is much easier in the naive example for compiler to identify parallelizable loops for SIMD execution.
