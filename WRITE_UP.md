@@ -246,10 +246,10 @@ mem usage:  557056 bytes
 
 ## Write up questions
 1. Why do we use a drastically smaller amount of memory in Part 3 when compared to Parts 1 & 2?
-> We used around ~557056 or 500 KB in part 3 vs 4718592 or 5MB in part 1 and 2, a 10x reduction. This is because we don't need a big NxN temporary array which for 1024 would have taken up 1024 * 1024 * 4 bytes = 4MB. Each thread though would have initialized 1024 x 4 = 4K bytes. 
+> We used around ~557056 or 500 KB in part 3 vs 4718592 or 5MB in part 1 and 2, a 10x reduction. This is because we don't need a big NxN temporary array which for 1024 would have taken up 1024 * 1024 * 4 bytes = 4MB. Each thread though would have initialized 1024 x 4 = 4K bytes, which can safely fit into the L1 cache of each thread. 
 
 2. Comment out your #pragma omp ... statement, what happens to your cpu time? Record the cpu time in your writeup. Why does fused attention make it easier for us utilize multithreading to a much fuller extent when compared to Part 1?
-> without the pragma command, it takes 4x longer 123ms vs 34ms. It increases drastically. I guess a cpu takes longer to run. With multi core, more compute is available per unit time and hence, the whole programe finishes much faster. 
+> without the pragma command, it takes 4x longer 123ms vs 34ms. It increases drastically because we run on a single core. With openMP, we can distribute workload across multi core, utilize more compute per unit time and hence, the whole programe finishes much faster. 
 
-> With fused attention, computation for each row is consolidated into a nice independent block making it easier to parallelize. On the other hand, when it is not fused, we have several blocks within the b and h loop iterating though different dimension which makes it harder to parallelize. We would probably only be able to parallize across the b and h loops instead of 3 loops. This leads to lower CPU utilization
+> With fused attention, computation for each row is consolidated into a nice independent block making it easier to parallelize. On the other hand, when it is not fused, we have several blocks within the b and h loop iterating though different dimension which makes it harder to parallelize. To parallelize the innermost loop which has different dimension, we would require locks to coordinate and generate correct output which leads to contention and other problems which slows thing down. Without locks, We would only be able to parallize across the b and h loops instead of 3 loops. This leads to lower CPU utilization and slower completion. 
 
