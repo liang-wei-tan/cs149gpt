@@ -303,7 +303,7 @@ torch::Tensor myFusedAttention(torch::Tensor QTensor, torch::Tensor KTensor, tor
     // -------- YOUR CODE HERE  -------- //
     // We give you a template of the first three loops for your convenience
     //loop over batch
-    #pragma omp parallel for collapse(3)
+    // #pragma omp parallel for collapse(3)
     for (int b = 0; b < B; b++){
 
         //loop over heads
