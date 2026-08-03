@@ -9,8 +9,8 @@
  #define BLOCK_SIZE 256
 
 // Uncomment for ISPC
-//#include "module_ispc.h"
-//using namespace ispc;
+#include "module_ispc.h"
+using namespace ispc;
 
 // ------------------------------------ //
 // 	WARM-UP: ACCESSING TENSORS      //
@@ -388,29 +388,56 @@ torch::Tensor myFlashAttention(torch::Tensor QTensor, torch::Tensor KTensor, tor
     int trBlocks = (N + Br - 1) / Br;
     int tcBlocks = (N + Bc - 1) / Bc;
 
+    #pragma omp parallel for collapse(2)
     for (int b = 0; b < B; b++){
         //loop over heads
         for (int h = 0; h < H; h++){
-
-            for (int i = 0; i < N; i++) {
-                l[i] = 0.0f;
-            }
-
+            // for (int i = 0; i < N; i++) {
+            //     l[i] = 0.0f;
+            // }
+            std::vector<float> Sij = formatTensor(SijTensor);
+            std::vector<float> Pij = formatTensor(PijTensor);
+            std::vector<float> Kj = formatTensor(KjTensor);
+            std::vector<float> Vj = formatTensor(VjTensor);
+            std::vector<float> Qi = formatTensor(QiTensor);
+            std::vector<float> Oi = formatTensor(OiTensor);
+            std::vector<float> l = formatTensor(LTensor);
+            std::vector<float> PV = formatTensor(PVTensor);
+            std::vector<float> li = formatTensor(LiTensor);
+            std::vector<float> lij = formatTensor(LijTensor);
+            std::vector<float> lnew = formatTensor(LnewTensor);
             for(int tc = 0; tc < tcBlocks; tc++){
                 int tcStart = tc * Bc;
                 int tcEnd = std::min(tcStart + Bc, N);
                 
                 // load Vj and Kj
-                for(int c = tcStart; c < tcEnd; c++){
-                    for(int feature = 0; feature < d; feature ++){
-                        float kj = fourDimRead(K, b, h, c, feature, H, N, d);
-                        float vj = fourDimRead(V, b, h, c, feature, H, N, d);
-                        int temp_c = c - tcStart;
-                        twoDimWrite(Kj, temp_c, feature, d, kj);
-                        twoDimWrite(Vj, temp_c, feature, d, vj);
-                    }
-                }
+                // for(int c = tcStart; c < tcEnd; c++){
+                //     for(int feature = 0; feature < d; feature ++){
+                //         float kj = fourDimRead(K, b, h, c, feature, H, N, d);
+                //         float vj = fourDimRead(V, b, h, c, feature, H, N, d);
+                //         int temp_c = c - tcStart;
+                //         twoDimWrite(Kj, temp_c, feature, d, kj);
+                //         twoDimWrite(Vj, temp_c, feature, d, vj);
+                //     }
+                // }
 
+                for(int c = tcStart; c < tcEnd; c++){
+    for(int feature = 0; feature < d; feature ++){
+        float kj = fourDimRead(K, b, h, c, feature, H, N, d);
+        float vj = fourDimRead(V, b, h, c, feature, H, N, d);
+        int temp_c = c - tcStart;
+        
+        // OLD WAY (Gather warning):
+        // twoDimWrite(Kj, temp_c, feature, d, kj);
+        
+        // NEW WAY (Transposed for fast SIMD):
+        twoDimWrite(Kj, feature, temp_c, Bc, kj);
+        
+        // Note: You might want to transpose Vj as well if you write a 
+        // similar ISPC kernel for the Oi computation!
+        twoDimWrite(Vj, temp_c, feature, d, vj); 
+    }
+}
                 for(int tr = 0; tr < trBlocks; tr++){
                     int trStart = tr * Br;
                     int trEnd = std::min(trStart + Br, N);
@@ -429,16 +456,32 @@ torch::Tensor myFlashAttention(torch::Tensor QTensor, torch::Tensor KTensor, tor
 
                     // computation starts
 
+                    // for(int i = 0; i < (trEnd - trStart); i++){
+                    //     for(int j = 0; j < (tcEnd - tcStart); j++){
+                    //         float total = 0.0;
+                    //         for(int feature = 0; feature < d; feature++){
+                    //             float qi = twoDimRead(Qi, i, feature, d);
+                    //             float kj = twoDimRead(Kj, j, feature, d);
+                    //             total += (qi * kj);
+                    //         }
+                    //         twoDimWrite(Sij, i, j, Bc, total);
+                    //     }
+                    // }
+
+
+                    // ... inside your tr and tc OpenMP loops ...
+
+                    // computation starts
                     for(int i = 0; i < (trEnd - trStart); i++){
-                        for(int j = 0; j < (tcEnd - tcStart); j++){
-                            float total = 0.0;
-                            for(int feature = 0; feature < d; feature++){
-                                float qi = twoDimRead(Qi, i, feature, d);
-                                float kj = twoDimRead(Kj, j, feature, d);
-                                total += (qi * kj);
-                            }
-                            twoDimWrite(Sij, i, j, Bc, total);
-                        }
+                        
+                        // 1. Grab raw pointers to avoid the overhead of the twoDimRead function calls
+                        float* qi_row = &Qi[i * d];
+                        float* kj_block = &Kj[0];
+                        float* sij_row = &Sij[i * Bc];
+                        
+                        // 2. Execute the SIMD-optimized dot product for this row
+                        // This replaces your inner 'j' and 'feature' loops completely
+                        ispc::compute_q_k_dot_product(qi_row, kj_block, sij_row, d, (tcEnd - tcStart));
                     }
 
                     // compute Pij

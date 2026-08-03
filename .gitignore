@@ -1,2 +1,5 @@
 __pycache__/*
 cs149_env/*
+module_ispc.*
+ispc-v1.31.0-linux.tar.gz
+ispc-v1.31.0-linux/*
