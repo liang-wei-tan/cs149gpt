@@ -496,14 +496,15 @@ torch::Tensor myFlashAttention(torch::Tensor QTensor, torch::Tensor KTensor, tor
                         ispc::compute_exp(sij_row, pij_row, (tcEnd - tcStart));
                     }
 
-                    for(int i = 0; i < (trEnd - trStart); i++){
-                        float total = 0.0;
-                        for(int j = 0; j < (tcEnd - tcStart); j++){
-                            float pval = twoDimRead(Pij, i, j, Bc);
-                            total += pval;
-                        }
-                        lij[i] = total;
-                    }
+                    // for(int i = 0; i < (trEnd - trStart); i++){
+                    //     float total = 0.0;
+                    //     for(int j = 0; j < (tcEnd - tcStart); j++){
+                    //         float pval = twoDimRead(Pij, i, j, Bc);
+                    //         total += pval;
+                    //     }
+                    //     lij[i] = total;
+                    // }
+                    ispc::compute_row_sum(&Pij[0], &lij[0], (trEnd - trStart), (tcEnd - tcStart));
 
                     // compute lnew
                     for(int i = 0; i < (trEnd - trStart); i++){

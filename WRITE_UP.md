@@ -287,3 +287,20 @@ Self CPU time total: 60.104ms
 STUDENT - FLASH ATTENTION statistics
 cpu time:  59.886ms
 mem usage:  524288 bytes
+
+Self CPU time total: 35.487ms
+
+## Parallelizing across QKT, exponential compute and row sum. 
+row sum parallelizes over I which mean accesses might not be contiguos
+STUDENT - FLASH ATTENTION statistics
+cpu time:  35.267ms
+mem usage:  524288 bytes
+root@12caff9b9441:~/cs149gp
+
+## Parallelizing across QKT, exponential compute and row sum (contiguous). 
+row sum parallelizes over J which means it is sequential across I but able to access memory contiguously across J
+Self CPU time total: 62.246ms
+
+STUDENT - FLASH ATTENTION statistics
+cpu time:  62.037ms
+mem usage:  524288 bytes

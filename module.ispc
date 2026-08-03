@@ -44,3 +44,18 @@ export void compute_exp(
         Pij_row[j] = exp(Sij_row[j]);
     }
 }
+
+export void compute_row_sum(
+    uniform float Pij[], 
+    uniform float lij[],
+    uniform const int Br,
+    uniform const int Bc
+) {
+    foreach (i = 0 ... Br) {
+        float total = 0.0;
+        for(uniform int j = 0; j < Bc; j++){
+            total += Pij[i * Bc + j];
+        }
+        lij[i] = total;
+    }
+}
