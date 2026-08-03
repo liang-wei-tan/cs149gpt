@@ -51,12 +51,12 @@ export void compute_row_sum(
     uniform const int Br,
     uniform const int Bc
 ) {
-    foreach (i = 0 ... Br) {
+    for (uniform int i = 0; i < Br; i++) {
         float total = 0.0;
-        for(uniform int j = 0; j < Bc; j++){
+        foreach(j = 0 ... Bc){
             total += Pij[i * Bc + j];
         }
-        lij[i] = total;
+        lij[i] = reduce_add(total);
     }
 }
 
@@ -82,16 +82,16 @@ export void compute_oi(
     uniform const int Br,
     uniform const int d
 ) {
-    for(int i = 0; i < Br; i++){
+    for(uniform int i = 0; i < Br; i++){
         foreach(feature = 0 ... d){
-            float lo = li[i] * oi[i * feature + d];
+            float lo = li[i] * oi[i * d + feature];
             for(int j = 0; j < Bc; j++){
                 float pval = pij[i * Bc + j];
-                float vval = Vj[j * feature + d];
+                float vval = Vj[j * d + feature];
                 lo += pval * vval;
             }
             lo = lo/lnew[i];
-            oi[i * feature + d] = lo;
+            oi[i * d + feature] = lo;
         }
     }
 }

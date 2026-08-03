@@ -304,3 +304,11 @@ Self CPU time total: 62.246ms
 STUDENT - FLASH ATTENTION statistics
 cpu time:  62.037ms
 mem usage:  524288 bytes
+
+## Parallelizing across QKT, exponential compute and row sum and OI calculation. 
+A lot of improvements
+Self CPU time total: 22.169ms
+
+STUDENT - FLASH ATTENTION statistics
+cpu time:  21.947ms
+mem usage:  524288 bytes
