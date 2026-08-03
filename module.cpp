@@ -528,14 +528,15 @@ torch::Tensor myFlashAttention(torch::Tensor QTensor, torch::Tensor KTensor, tor
                     ispc::compute_oi(&Oi[0], &li[0], &Pij[0], &Vj[0], &lnew[0], Bc, Br, d);
 
                     // write back Oi and lnew
-                    for(int r = trStart; r < trEnd; r++){
-                        int temp_r = r - trStart;
-                        l[r] = lnew[temp_r];
-                        for(int feature = 0; feature < d; feature++){
-                            float oi = twoDimRead(Oi, temp_r, feature, d);
-                            fourDimWrite(O, b, h, r, feature, H, N, d, oi);
-                        }
-                    }
+                    ispc::write_back(&Oi[0], &O[b * H * N * d + h * N * d], &l[0], &lnew[0], trStart, trEnd, d);
+                    // for(int r = trStart; r < trEnd; r++){
+                    //     int temp_r = r - trStart;
+                    //     l[r] = lnew[temp_r];
+                    //     for(int feature = 0; feature < d; feature++){
+                    //         float oi = twoDimRead(Oi, temp_r, feature, d);
+                    //         fourDimWrite(O, b, h, r, feature, H, N, d, oi);
+                    //     }
+                    // }
                 }
 
             }

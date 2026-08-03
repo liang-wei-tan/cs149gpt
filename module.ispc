@@ -95,3 +95,23 @@ export void compute_oi(
         }
     }
 }
+
+
+export void write_back(
+    uniform float oi[],
+    uniform float o[],
+    uniform float l[],
+    uniform float lnew[],
+    uniform const int trStart,
+    uniform const int trEnd,
+    uniform const int d
+) {
+   for(uniform int r = trStart; r < trEnd; r++){
+        uniform int temp_r = r - trStart;
+        l[r] = lnew[temp_r];
+        foreach(feature = 0 ... d){
+            float oi_temp = oi[temp_r * d + feature];
+            o[r * d + feature] = oi_temp;
+        }
+    }
+}
