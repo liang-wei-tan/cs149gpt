@@ -59,3 +59,39 @@ export void compute_row_sum(
         lij[i] = total;
     }
 }
+
+export void compute_lnew(
+    uniform float lij[],
+    uniform float li[], 
+    uniform float lnew[],
+    uniform const int Br
+) {
+    foreach (i = 0 ... Br) {
+        lnew[i] = lij[i] + li[i];
+    }
+}
+
+
+export void compute_oi(
+    uniform float oi[],
+    uniform float li[],
+    uniform float pij[],
+    uniform float Vj[],
+    uniform float lnew[],
+    uniform const int Bc,
+    uniform const int Br,
+    uniform const int d
+) {
+    for(int i = 0; i < Br; i++){
+        foreach(feature = 0 ... d){
+            float lo = li[i] * oi[i * feature + d];
+            for(int j = 0; j < Bc; j++){
+                float pval = pij[i * Bc + j];
+                float vval = Vj[j * feature + d];
+                lo += pval * vval;
+            }
+            lo = lo/lnew[i];
+            oi[i * feature + d] = lo;
+        }
+    }
+}

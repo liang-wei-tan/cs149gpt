@@ -507,23 +507,25 @@ torch::Tensor myFlashAttention(torch::Tensor QTensor, torch::Tensor KTensor, tor
                     ispc::compute_row_sum(&Pij[0], &lij[0], (trEnd - trStart), (tcEnd - tcStart));
 
                     // compute lnew
-                    for(int i = 0; i < (trEnd - trStart); i++){
-                        lnew[i] = lij[i] + li[i];
-                    }
+                    // for(int i = 0; i < (trEnd - trStart); i++){
+                    //     lnew[i] = lij[i] + li[i];
+                    // }
+                    ispc::compute_lnew(&lij[0], &li[0], &lnew[0], (trEnd - trStart));
 
                     // compute Oi
-                    for(int i = 0; i < (trEnd - trStart); i++){
-                        for(int feature = 0; feature < d; feature++){
-                           float lo = li[i] * twoDimRead(Oi, i, feature, d);
-                           for(int j = 0; j < (tcEnd - tcStart); j++){
-                                float pval = twoDimRead(Pij, i, j, Bc);
-                                float vval = twoDimRead(Vj, j, feature, d);
-                                lo += pval * vval;
-                           }
-                           lo = lo/lnew[i];
-                           twoDimWrite(Oi, i, feature, d, lo);
-                        }
-                    }
+                    // for(int i = 0; i < (trEnd - trStart); i++){
+                    //     for(int feature = 0; feature < d; feature++){
+                    //        float lo = li[i] * twoDimRead(Oi, i, feature, d);
+                    //        for(int j = 0; j < (tcEnd - tcStart); j++){
+                    //             float pval = twoDimRead(Pij, i, j, Bc);
+                    //             float vval = twoDimRead(Vj, j, feature, d);
+                    //             lo += pval * vval;
+                    //        }
+                    //        lo = lo/lnew[i];
+                    //        twoDimWrite(Oi, i, feature, d, lo);
+                    //     }
+                    // }
+                    ispc::compute_oi(&Oi[0], &li[0], &Pij[0], &Vj[0], &lnew[0], Bc, Br, d);
 
                     // write back Oi and lnew
                     for(int r = trStart; r < trEnd; r++){
