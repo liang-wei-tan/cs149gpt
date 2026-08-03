@@ -260,3 +260,13 @@ STUDENT - FLASH ATTENTION statistics
 cpu time:  184.912ms
 mem usage:  524288 bytes
 
+## Questions
+1. How does the memory usage of Part 4 compare to that of the previous parts? Why is this the case?
+> 524288 bytes used or ~ 500KB. About same as what's used in Part 3 but less than what's used in part 1 & 2 which is about 4718592 bytes or 4MB. Flash attention like part 3 which fuses the operation does not require a big intermediate NxN array which is 1024 x 1024 x 4 bytes = 4MB. It requires only a few intermediate arrays based on the tiling size. Namely Kj (Bc x d), Vj (Bc x d), Qi (Br x d), Oi(Br x d), Li(Br) , given br and bc = 256, => 16384 x 4 + 256= 65792 = 65KB only. 
+
+2. Notice that the performance of Part 4 is slower than that of the previous parts. Have we fully optimized Part 4? What other performance improvements can be done? Please list them and describe why they would increase performance.
+- No multiprocessing involved
+- we should be able to parallelize based on blocks.
+- no explicit use of SIMD unit
+
+
