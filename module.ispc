@@ -32,3 +32,15 @@ export void compute_q_k_dot_product(
         Sij_row[j] = total;
     }
 }
+
+export void compute_exp(
+    uniform float Sij_row[], 
+    uniform float Pij_row[], 
+    uniform const int Bc
+) {
+    // 'foreach' parallelizes this loop across the SIMD lanes.
+    // If using AVX2, it processes j = 0 to 7 simultaneously.
+    foreach (j = 0 ... Bc) {
+        Pij_row[j] = exp(Sij_row[j]);
+    }
+}

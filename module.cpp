@@ -486,11 +486,14 @@ torch::Tensor myFlashAttention(torch::Tensor QTensor, torch::Tensor KTensor, tor
 
                     // compute Pij
                     for(int i = 0; i < (trEnd - trStart); i++){
-                        for(int j = 0; j < (tcEnd - tcStart); j++){
-                            float val = twoDimRead(Sij, i, j, Bc);
-                            float exp_val = exp(val);
-                            twoDimWrite(Pij, i, j, Bc, exp_val);
-                        }
+                        // for(int j = 0; j < (tcEnd - tcStart); j++){
+                        //     float val = twoDimRead(Sij, i, j, Bc);
+                        //     float exp_val = exp(val);
+                        //     twoDimWrite(Pij, i, j, Bc, exp_val);
+                        // }
+                        float* sij_row = &Sij[i * Bc];
+                        float* pij_row = &Pij[i * Bc];
+                        ispc::compute_exp(sij_row, pij_row, (tcEnd - tcStart));
                     }
 
                     for(int i = 0; i < (trEnd - trStart); i++){

@@ -270,3 +270,20 @@ mem usage:  524288 bytes
 - no explicit use of SIMD unit
 
 
+# SIMD parallelization & multi core processingw with open mp
+## Parallelizing across QKt only, speed up from 180ms to 60ms.
+
+Self CPU time total: 65.192ms
+
+STUDENT - FLASH ATTENTION statistics
+cpu time:  64.887ms
+mem usage:  524288 bytes
+
+## Parallelizing across QKT, and exponential compute. 
+reduce further from 64ms to 59ms
+-----  ------------  
+Self CPU time total: 60.104ms
+
+STUDENT - FLASH ATTENTION statistics
+cpu time:  59.886ms
+mem usage:  524288 bytes
